@@ -1,0 +1,17 @@
+{
+  "name": "pool-keeper",
+  "owner": {
+    "name": "cris-dangithub"
+  },
+  "metadata": {
+    "description": "pool-keeper: a complete, sourced knowledge pool about a person, for any agent to read."
+  },
+  "plugins": [
+    {
+      "name": "pool-keeper",
+      "source": "./",
+      "description": "Builds and maintains a knowledge pool about a person: sources, facts without duplicates, conflicts, writing style, activity journal and GitHub history.",
+      "version": "0.1.0"
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "pool_keeper": "0.1.0",
+  "created": "2026-10-09",
+  "person": {
+    "name": "Maren Okafor"
+  },
+  "ui_language": "en",
+  "pool_language": "en",
+  "keep_original_language": true,
+  "domains": {
+    "preferences_values": false,
+    "goals": true,
+    "availability": false,
+    "personal_life": false
+  },
+  "layout": {
+    "readme": "README.md",
+    "snapshot": "00_snapshot.md",
+    "profile": "01_profile.md",
+    "experience": "10_experience/",
+    "education": "20_education.md",
+    "skills": "30_skills.md",
+    "certifications_languages": "40_certifications_languages.md",
+    "achievements": "50_achievements.md",
+    "journal": "55_journal/",
+    "journal_readme": "55_journal/README.md",
+    "narrative_positioning": "60_narrative_positioning.md",
+    "stories": "62_stories.md",
+    "writing_style": "65_writing_style/",
+    "writing_style_readme": "65_writing_style/README.md",
+    "writing_style_patterns": "65_writing_style/01_observed_patterns.md",
+    "writing_style_rules": "65_writing_style/02_active_rules.md",
+    "writing_style_corrections": "65_writing_style/03_correction_log.md",
+    "other": "70_other.md",
+    "preferences_values": "75_preferences_values.md",
+    "goals": "76_goals.md",
+    "availability": "77_availability.md",
+    "personal_life": "78_personal_life.md",
+    "keywords": "80_keywords.md",
+    "open_questions": "90_open_questions.md",
+    "changelog": "CHANGELOG.md",
+    "sources": "sources/",
+    "sources_index": "sources/INDEX.md",
+    "source_notes": "notes.md"
+  },
+  "country": "ES",
+  "official_sources": [
+    "https://www.educacion.gob.es/ruct/"
+  ],
+  "web_research": "auto",
+  "questions": {
+    "policy": "minimal",
+    "max_per_report": 1
+  },
+  "sensitive": {
+    "never_copy": [
+      "national ID / passport / tax numbers",
+      "bank account and card numbers",
+      "passwords, tokens, API keys",
+      "names and contacts of third parties in work documents (keep structure and counts only)",
+      "health data unless the person explicitly asks to store it"
+    ]
+  },
+  "delegation": {
+    "allowed": true,
+    "not_done_section": "90_open_questions.md → Asked, never done"
+  },
+  "journal": {
+    "default_context": "2024_brisa-logistics"
+  },
+  "sources": {
+    "github": [
+      {
+        "owners": [
+          {
+            "name": "maren-okafor",
+            "kind": "user",
+            "account": "maren-okafor"
+          }
+        ],
+        "identities": [
+          "maren-okafor",
+          "maren.okafor@example.com"
+        ],
+        "repos": {
+          "include": [],
+          "exclude": []
+        },
+        "since": "2026-10-01",
+        "max_units_per_run": 25
+      }
+    ]
+  },
+  "git": false,
+  "show_skill_path": false
+}

@@ -1,0 +1,80 @@
+{
+  "repos": {
+    "noa-dev": [
+      {"full_name": "noa-dev/api", "pushed_at": "2026-10-09T10:00:00Z", "private": false, "default_branch": "main", "language": "Python"},
+      {"full_name": "noa-dev/site", "pushed_at": "2026-10-08T10:00:00Z", "private": true, "default_branch": "main", "language": "TypeScript"},
+      {"full_name": "noa-dev/dotfiles", "pushed_at": "2026-10-09T10:00:00Z", "private": false, "default_branch": "main", "language": "Shell"},
+      {"full_name": "noa-dev/old", "pushed_at": "2024-01-01T10:00:00Z", "private": false, "default_branch": "main", "language": "Go"}
+    ]
+  },
+  "commits": {
+    "noa-dev/api": [
+      {"sha": "c1000000000000000000000000000000000000a1", "date": "2026-10-05T09:00:00Z", "author_login": "noa-dev", "author_name": "Noa Example", "author_email": "noa@example.com",
+       "message": "feat(auth): add refresh tokens PAY-12", "parents": 1, "url": "https://github.com/noa-dev/api/commit/c1",
+       "files": [{"filename": "src/auth/tokens.py", "status": "added", "additions": 80, "deletions": 0}, {"filename": "tests/test_tokens.py", "status": "added", "additions": 40, "deletions": 0}]},
+      {"sha": "c2000000000000000000000000000000000000a2", "date": "2026-10-05T15:00:00Z", "author_login": "noa-dev", "author_name": "Noa Example", "author_email": "noa@example.com",
+       "message": "fix(auth): handle expired token", "parents": 1, "url": "https://github.com/noa-dev/api/commit/c2",
+       "files": [{"filename": "src/auth/tokens.py", "status": "modified", "additions": 12, "deletions": 3}]},
+      {"sha": "c3000000000000000000000000000000000000a3", "date": "2026-10-06T08:00:00Z", "author_login": "noa-dev", "author_name": "Noa Example", "author_email": "noa@example.com",
+       "message": "Merge pull request #7 from noa-dev/feat/refresh", "parents": 2, "url": "https://github.com/noa-dev/api/commit/c3", "files": []},
+      {"sha": "c5000000000000000000000000000000000000a5", "date": "2026-10-07T08:00:00Z", "author_login": "noa-dev", "author_name": "Noa Example", "author_email": "noa@example.com",
+       "message": "update deps", "parents": 1, "url": "https://github.com/noa-dev/api/commit/c5",
+       "files": [{"filename": "yarn.lock", "status": "modified", "additions": 300, "deletions": 280}]},
+      {"sha": "c6000000000000000000000000000000000000a6", "date": "2026-10-07T09:00:00Z", "author_login": "noa-dev", "author_name": "Noa Example", "author_email": "noa@example.com",
+       "message": "v1.4.0", "parents": 1, "url": "https://github.com/noa-dev/api/commit/c6",
+       "files": [{"filename": "package.json", "status": "modified", "additions": 1, "deletions": 1}, {"filename": "CHANGELOG.md", "status": "modified", "additions": 6, "deletions": 0}]},
+      {"sha": "c7000000000000000000000000000000000000a7", "date": "2026-10-07T10:00:00Z", "author_login": "noa-dev", "author_name": "Noa Example", "author_email": "noa@example.com",
+       "message": "style: run prettier", "parents": 1, "url": "https://github.com/noa-dev/api/commit/c7",
+       "files": [{"filename": "src/app.ts", "status": "modified", "additions": 30, "deletions": 30}]},
+      {"sha": "c8000000000000000000000000000000000000a8", "date": "2026-10-08T07:00:00Z", "author_login": "noa-dev", "author_name": "Noa Example", "author_email": "noa@example.com",
+       "message": "fix typo in README", "parents": 1, "url": "https://github.com/noa-dev/api/commit/c8",
+       "files": [{"filename": "README.md", "status": "modified", "additions": 1, "deletions": 1}]},
+      {"sha": "c9000000000000000000000000000000000000a9", "date": "2026-10-08T10:00:00Z", "author_login": "noa-dev", "author_name": "Noa Example", "author_email": "noa@example.com",
+       "message": "docs: write deployment guide", "parents": 1, "url": "https://github.com/noa-dev/api/commit/c9",
+       "files": [{"filename": "docs/deploy.md", "status": "added", "additions": 120, "deletions": 0}]},
+      {"sha": "c1000000000000000000000000000000000000b0", "date": "2026-10-08T11:00:00Z", "author_login": "noa-dev", "author_name": "Noa Example", "author_email": "noa@example.com",
+       "message": "docs: add diagram to deployment guide", "parents": 1, "url": "https://github.com/noa-dev/api/commit/c10",
+       "files": [{"filename": "docs/deploy.md", "status": "modified", "additions": 20, "deletions": 2}]},
+      {"sha": "c1100000000000000000000000000000000000b1", "date": "2026-10-08T15:00:00Z", "author_login": "noa-dev", "author_name": "Noa Example", "author_email": "noa@example.com", "branch": "feat/db-pool",
+       "message": "refactor(db): connection pool", "parents": 1, "url": "https://github.com/noa-dev/api/commit/c11",
+       "files": [{"filename": "src/db/pool.py", "status": "added", "additions": 90, "deletions": 0}]},
+      {"sha": "c1200000000000000000000000000000000000b2", "date": "2026-10-09T09:00:00Z", "author_login": "noa-dev", "author_name": "Noa Example", "author_email": "noa@example.com", "branch": "feat/db-pool",
+       "message": "test(db): pool tests", "parents": 1, "url": "https://github.com/noa-dev/api/commit/c12",
+       "files": [{"filename": "tests/test_pool.py", "status": "added", "additions": 50, "deletions": 0}]},
+      {"sha": "c1300000000000000000000000000000000000b3", "date": "2026-10-09T10:00:00Z", "author_login": "other-dev", "author_name": "Other Dev", "author_email": "other@example.com",
+       "message": "feat: unrelated work by a colleague", "parents": 1, "url": "https://github.com/noa-dev/api/commit/c13",
+       "files": [{"filename": "src/other.py", "status": "added", "additions": 10, "deletions": 0}]},
+      {"sha": "c1400000000000000000000000000000000000b4", "date": "2026-10-09T12:00:00Z", "author_login": "", "author_name": "Noa E.", "author_email": "noa@example.com",
+       "message": "feat: export CSV\n\nSee https://acme.atlassian.net/browse/DATA-77 and keep files UTF-8 per ISO-8601 dates.", "parents": 1, "url": "https://github.com/noa-dev/api/commit/c14",
+       "files": [{"filename": "src/export.py", "status": "added", "additions": 60, "deletions": 0}]},
+      {"sha": "c1600000000000000000000000000000000000b6", "date": "2026-10-09T14:00:00Z", "author_login": "noa-dev", "author_name": "Noa Example", "author_email": "noa@example.com",
+       "message": "feat(search): fuzzy search SRCH-3", "parents": 1, "url": "https://github.com/noa-dev/api/commit/c16",
+       "files": [{"filename": "src/search.py", "status": "added", "additions": 70, "deletions": 0}]}
+    ],
+    "noa-dev/site": [
+      {"sha": "d1000000000000000000000000000000000000d1", "date": "2026-10-08T09:00:00Z", "author_login": "noa-dev", "author_name": "Noa Example", "author_email": "noa@example.com",
+       "message": "feat: new landing page hero", "parents": 1, "url": "https://github.com/noa-dev/site/commit/d1",
+       "files": [{"filename": "app/page.tsx", "status": "modified", "additions": 40, "deletions": 12}]}
+    ],
+    "noa-dev/dotfiles": [
+      {"sha": "e1000000000000000000000000000000000000e1", "date": "2026-10-09T09:00:00Z", "author_login": "noa-dev", "author_name": "Noa Example", "author_email": "noa@example.com",
+       "message": "tweak zshrc", "parents": 1, "url": "https://github.com/noa-dev/dotfiles/commit/e1", "files": [{"filename": ".zshrc", "status": "modified", "additions": 1, "deletions": 1}]}
+    ]
+  },
+  "prs": {
+    "noa-dev/api": [
+      {"number": 7, "title": "Refresh tokens (PAY-12)", "body": "Implements PAY-12.\nLinear: https://linear.app/acme/issue/PAY-12", "state": "closed",
+       "merged_at": "2026-10-06T08:00:00Z", "created_at": "2026-10-05T09:30:00Z", "updated_at": "2026-10-06T08:00:00Z",
+       "url": "https://github.com/noa-dev/api/pull/7", "user": "noa-dev", "head": "feat/refresh", "labels": ["auth"],
+       "commits": ["c1000000000000000000000000000000000000a1", "c2000000000000000000000000000000000000a2", "c3000000000000000000000000000000000000a3"]},
+      {"number": 9, "title": "Fuzzy search", "body": "Closes #8", "state": "open",
+       "merged_at": null, "created_at": "2026-10-09T14:10:00Z", "updated_at": "2026-10-09T14:10:00Z",
+       "url": "https://github.com/noa-dev/api/pull/9", "user": "noa-dev", "head": "feat/search", "labels": [],
+       "commits": ["c1600000000000000000000000000000000000b6"]},
+      {"number": 11, "title": "Someone else's PR", "body": "", "state": "open",
+       "merged_at": null, "created_at": "2026-10-09T14:10:00Z", "updated_at": "2026-10-09T14:10:00Z",
+       "url": "https://github.com/noa-dev/api/pull/11", "user": "other-dev", "head": "x", "labels": [],
+       "commits": ["c1300000000000000000000000000000000000b3"]}
+    ]
+  }
+}

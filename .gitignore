@@ -1,0 +1,10 @@
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# local test runs and personal data: a real pool never lives inside this repo
+/tmp/
+/pool/
+/examples/**/.pool-keeper/github/runs/
+*.local.*

@@ -1,0 +1,15 @@
+# Maren Okafor
+Backend Developer | Python | PostgreSQL
+Valencia, Spain | maren.okafor@example.com | github.com/maren-okafor
+
+EXPERIENCE
+Brisa Logistics — Backend Developer, Feb 2024 – Present
+- Reduced the nightly route optimisation from 5 hours to 40 minutes by batching DB writes.
+- Built and maintain delivery-slot APIs used by 3 mobile apps.
+
+EDUCATION
+BSc Computer Engineering — Universitat Politècnica de València, 2019 – 2023
+
+SKILLS
+Python, FastAPI, PostgreSQL, Docker, GitHub Actions
+Languages: Spanish (native), English (C1)
