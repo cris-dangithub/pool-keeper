@@ -21,8 +21,10 @@ they appear in English.
 
 For each attached file:
 
-1. `pk hash <file>` → full SHA-256, 12-character prefix and `duplicate_of`. If it is a
-   duplicate: say so, don't archive it again (but still check whether anything in it was missed).
+1. `pk hash <file>` → full SHA-256, 12-character prefix, `duplicate_of` (a source with the same
+   hash, or whose folder already holds an identical file — e.g. a member of an archived ZIP) and
+   `same_file_in_archive`. If it is a duplicate: say so, don't archive it again (but still check
+   whether anything in it was missed).
 2. **Reserve the ID before anything else**: `pk next-id S --reserve "<YYYY-MM-DD>_<name>"`
    (one `--reserve` per source). It takes the next free S number under a pool lock **and**
    writes a placeholder row in `<sources_index>` (kind `(reserved)`), so another session
@@ -32,7 +34,10 @@ For each attached file:
 3. Create `<sources>/<YYYY-MM-DD>_<file name without extension>/` and copy the original there
    (keep the file name). If the copy fails because the file is open in another program, retry
    once, then ask the user to close it.
-4. Extract the text to `extracted.txt` in the same folder:
+4. Extract the text to `extracted.txt` in the same folder. **Every extractor copies the text
+   verbatim, third-party names included**: before moving on, replace anything listed in
+   `sensitive.never_copy` in `extracted.txt` (e.g. a reviewer's name → `[nama disensor]` /
+   `[name removed]`, in the pool language) — the original file keeps it.
    - `.docx` → `pk extract <file> -o <folder>/extracted.txt` (body, tables, headers, footers,
      footnotes, hyperlinks).
    - `.pdf` → read it with your file reader (page ranges for long files) or a PDF skill;

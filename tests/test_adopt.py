@@ -194,3 +194,23 @@ def test_journal_tokens_in_pool_language(adopted, capsys):
     assert es["J0001"].original.startswith("hari ini")
     assert es["J0002"].qty == 2 and es["J0002"].recorded == "2026-11-18" and es["J0002"].original == "rapat 2 jam"
     assert lint.lint(adopted)["errors"] == []
+
+
+def test_hash_finds_file_already_inside_archive(adopted, capsys, tmp_path):
+    import ids  # noqa: PLC0415
+    member = adopted / "sources" / "2026-10-03_cv-contoh" / "unzipped" / "sop.docx"
+    member.parent.mkdir(parents=True)
+    member.write_bytes(b"same bytes")
+    again = tmp_path / "sop - copy.docx"
+    again.write_bytes(b"same bytes")
+    ids.main(["hash", str(again)])
+    out = json.loads(capsys.readouterr().out)[0]
+    assert out["duplicate_of"] == "S001"
+    assert out["same_file_in_archive"] == "sources/2026-10-03_cv-contoh/unzipped/sop.docx"
+
+
+def test_status_flags_empty_snapshot(adopted):
+    import status  # noqa: PLC0415
+    fn = next(getattr(status, n) for n in ("status", "collect", "compute") if hasattr(status, n))
+    r = fn(adopted)
+    assert r["snapshot_empty"] is True and r["snapshot_stale"] is True

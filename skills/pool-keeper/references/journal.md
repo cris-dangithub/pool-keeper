@@ -57,10 +57,14 @@ It reports `unknown_tags`: add them to the vocabulary (`pk journal tags --add <t
 2. **Reuse tags before creating new ones** (`pk journal tags` lists them with usage counts).
    Tags are short, lowercase, in the pool language or English; one concept = one tag; synonyms
    go into aliases.
-3. **Original text is kept verbatim** (`Original:`), whatever language it was told in. The
-   description is normalised, in `pool_language`, without embellishment.
+3. **Original text is kept verbatim** (`Original:`), whatever language it was told in — with
+   one exception: names of third parties (candidates, staff, guests, client contacts) are
+   replaced **before** passing `--original`, by their role in brackets
+   (`"kirim weekly report ke [PIC klien]"`). The description is normalised, in
+   `pool_language`, without embellishment.
 4. **Light promotion** — only when the activity is new information for the rest of the pool;
-   tag the promoted point with `[J####]` and add `Promoted: <key>` to the entry:
+   tag the promoted point with `[J####]` and add `Promoted: <layout key>` (e.g. `skills`; several
+   keys comma-separated) to the entry:
    - a new tool or skill → `skills` (evidence: "used in <context> [J0042]") and the experience
      file's "tools" section;
    - a measurable result, an award, praise/feedback → `achievements` (+ the experience file);

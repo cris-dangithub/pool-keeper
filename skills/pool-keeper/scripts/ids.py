@@ -85,6 +85,14 @@ def cmd_hash(a):
         key = r.sha.strip("`").upper()
         if len(key) >= 8 and all(c in "0123456789ABCDEF" for c in key):
             known.setdefault(key[:12], r.id)
+    # files already inside the archive (e.g. members of an unzipped ZIP source) by size, hashed lazily
+    src_dir = lpath(pool, cfg, "sources")
+    folders = {r.folder.strip().rstrip("/"): r.id for r in rows}
+    by_size: dict = {}
+    if src_dir.is_dir():
+        for q in src_dir.rglob("*"):
+            if q.is_file() and q.name not in ("extracted.txt", cfg["layout"].get("source_notes", "")):
+                by_size.setdefault(q.stat().st_size, []).append(q)
     out = []
     for f in a.files:
         p = pathlib.Path(f)
@@ -92,8 +100,18 @@ def cmd_hash(a):
             out.append({"file": f, "error": "not found"})
             continue
         full = sha256(p)
+        dup_file = None
+        for q in by_size.get(p.stat().st_size, []):
+            if q.resolve() != p.resolve() and sha256(q) == full:
+                dup_file = q.relative_to(pool).as_posix()
+                break
+        dup = known.get(full[:12])
+        if not dup and dup_file:
+            top = pathlib.PurePosixPath(dup_file).relative_to(
+                pathlib.PurePosixPath(src_dir.relative_to(pool).as_posix())).parts[0]
+            dup = folders.get(top)
         out.append({"file": str(p), "sha256": full, "short": full[:12],
-                    "duplicate_of": known.get(full[:12])})
+                    "duplicate_of": dup, "same_file_in_archive": dup_file})
     print(json.dumps(out, ensure_ascii=False, indent=2))
     return 0
 

@@ -27,6 +27,11 @@ generalises.
   question for a note that cannot be understood.
 - **Pool-language labels** for source folders (`catatan-chat`, `riset-web`…), source kinds
   (`Bukti karya`…) and changelog sections (`Baru` / `Diperkaya` / `Konflik`…) in `pk strings`.
+- From a rehearsal on a real adopted pool: `pk hash` also finds a file identical to one already
+  inside the archive (e.g. a member of an unzipped ZIP source); `pk status` reports an
+  untouched snapshot template as stale (`snapshot_empty`); third-party names are replaced by
+  their role inside the journal's verbatim line too; `extracted.txt` must be redacted after any
+  extractor; no ✍ question for text identical to an already analysed source.
 
 ## 0.1.0 — 2026-10-09
 

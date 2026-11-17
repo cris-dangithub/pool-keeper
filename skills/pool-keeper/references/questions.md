@@ -14,8 +14,9 @@ The person does not want to be asked things all the time. The default is: **don'
   contains **text the person wrote themself** (CV, cover letter, SOP, job description, e-mail,
   report, a long message), add one line: "✍ Extract writing patterns from this source?
   (yes/no)". Not for certificates, diplomas, tables/schedules/spreadsheets of numbers, web
-  research, short chat answers, or code. If they say yes, run `references/writing-style.md`
-  for that source.
+  research, short chat answers, or code, nor for a source whose text is identical to one whose
+  patterns were already extracted (say "same text as S0xx" instead). If they say yes, run
+  `references/writing-style.md` for that source.
 - **Style corrections:** one question is allowed if it is unclear which text is the AI's and
   which is the expected one, or if a new rule contradicts an existing one.
 - **The question list** is shown only when the person asks for status ("what is still

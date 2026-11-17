@@ -58,9 +58,14 @@ def status(pool: pathlib.Path) -> dict:
         m = re.search(r"^##\s+(\d{4}-\d{2}-\d{2})", read_text(changelog), re.M)
         last_change = m.group(1) if m else None
     snap_date = None
+    snap_empty = True
     if snap.is_file():
-        m = re.search(r"(\d{4}-\d{2}-\d{2})", read_text(snap))
+        snap_text = read_text(snap)
+        m = re.search(r"(\d{4}-\d{2}-\d{2})", snap_text)
         snap_date = m.group(1) if m else None
+        # an untouched template has only "–" values: it was never filled in
+        values = re.findall(r"^- \*\*[^*]+:\*\*\s*(.*)$", snap_text, re.M)[1:]  # [0] = updated line
+        snap_empty = all(v.strip() in ("–", "-", "") for v in values)
     gh_dir = pool / MARKER / "github" / "runs"
     pending = []
     for f in sorted(gh_dir.glob("*.json")) if gh_dir.is_dir() else []:
@@ -83,7 +88,8 @@ def status(pool: pathlib.Path) -> dict:
         "answered": answered,
         "last_change": last_change,
         "snapshot_date": snap_date,
-        "snapshot_stale": bool(last_change and snap_date and snap_date < last_change),
+        "snapshot_stale": bool(snap_empty or (last_change and snap_date and snap_date < last_change)),
+        "snapshot_empty": snap_empty,
         "domains_enabled": [k for k, v in (cfg.get("domains") or {}).items() if v],
         "github_sources": len((cfg.get("sources") or {}).get("github") or []),
         "github_pending_runs": pending,
