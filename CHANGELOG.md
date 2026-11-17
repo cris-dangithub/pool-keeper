@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.2.0 — 2026-11-17
+
+Lessons from six weeks of a real pool kept by the person-specific skill that pool-keeper
+generalises.
+
+- **`pk adopt`**: bring an existing pool under pool-keeper without moving or renaming anything.
+  Every file is mapped to a layout key (exact name, or the same name with another numeric
+  prefix, e.g. `00_profil.md` → `profile`; `--map key=path` for the rest), the source-notes file
+  name is detected (`catatan.md`), only missing files are created (usually the snapshot and the
+  STAR stories), folders outside the layout are left as they are, and `--legacy-skill-dir`
+  retires the old skill into `.pool-keeper/legacy/` (its `SKILL.md` renamed) so cv-tailor's
+  manager probe finds a single manager. `--dry-run` previews the mapping. Documented in
+  `references/setup.md` → "Adopting an existing pool".
+- **ID reservation under a lock**: `pk next-id S --reserve <folder>` takes the number and writes
+  a placeholder index row atomically; `pk journal add` takes the J number and writes the entry
+  under the same lock (`.pool-keeper/ids.lock`). Two sessions ingesting into one pool at the same
+  time used to get the same S number and had to renumber. `pk lint` warns about reservations
+  never filled in; `references/ingest.md` §5b documents renumbering.
+- **Forwarded sources**: an assistant in another session or project can forward what the person
+  told it (delegation mode, "forwarded by" source kind; it does not resolve important conflicts
+  without the person's own confirmation).
+- **Journal tokens in the pool language** (`jumlah:` / `dicatat` / `Asli:` / `Dipromosikan:` in
+  Indonesian, `cantidad:` / `registrado:` / `Promovido:` in Spanish); the scripts read the tokens
+  of every built-in language. Unclear context `@?`, estimated dates, and one clarification
+  question for a note that cannot be understood.
+- **Pool-language labels** for source folders (`catatan-chat`, `riset-web`…), source kinds
+  (`Bukti karya`…) and changelog sections (`Baru` / `Diperkaya` / `Konflik`…) in `pk strings`.
+
 ## 0.1.0 — 2026-10-09
 
 First public version: a generic, multi-person version of a person-specific knowledge-pool skill.

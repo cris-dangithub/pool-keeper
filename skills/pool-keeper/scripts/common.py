@@ -17,11 +17,24 @@ import unicodedata
 
 SKILL_DIR = pathlib.Path(__file__).resolve().parent.parent
 TEMPLATES = SKILL_DIR / "templates"
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 MARKER = ".pool-keeper"
 CONFIG_NAME = "config.json"
 STRINGS_OVERRIDE = "strings.json"
+LOCK_NAME = "ids.lock"
+LEGACY_DIR = "legacy"
+
+# Journal tokens: written in the pool language (strings → journal_tokens), read in any of these.
+JOURNAL_TOKENS_EN = {"qty": "qty:", "rec": "rec:", "link": "link:", "original": "Original:",
+                     "promoted": "Promoted:"}
+JOURNAL_TOKEN_ALIASES = {
+    "qty": ["qty", "jumlah", "cantidad"],
+    "rec": ["rec", "dicatat", "registrado"],
+    "link": ["link", "tautan", "enlace"],
+    "original": ["Original", "Asli"],
+    "promoted": ["Promoted", "Dipromosikan", "Promovido"],
+}
 
 # canonical keys -------------------------------------------------------------------------
 CORE_FILE_KEYS = [
@@ -89,6 +102,44 @@ def write_text(path, text: str) -> None:
 
 def parse_date(value: str) -> dt.date:
     return dt.date.fromisoformat(value.strip()[:10])
+
+
+class PoolLock:
+    """Exclusive lock on a pool while IDs are handed out, so two sessions writing to the same
+    pool at the same time never get the same S/J number. A lock older than `stale` seconds is
+    considered abandoned (a crashed session) and taken over."""
+
+    def __init__(self, pool, timeout: float = 30.0, stale: float = 120.0):
+        self.path = pathlib.Path(pool) / MARKER / LOCK_NAME
+        self.timeout, self.stale = timeout, stale
+
+    def __enter__(self):
+        import time  # noqa: PLC0415
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        deadline = time.monotonic() + self.timeout
+        while True:
+            try:
+                fd = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                os.write(fd, f"{os.getpid()} {now()}\n".encode())
+                os.close(fd)
+                return self
+            except FileExistsError:
+                try:
+                    if time.time() - self.path.stat().st_mtime > self.stale:
+                        self.path.unlink()
+                        continue
+                except FileNotFoundError:
+                    continue
+                if time.monotonic() > deadline:
+                    raise SystemExit(f"LOCKED: {self.path} is held by another session; retry in a moment.")
+                time.sleep(0.05)
+
+    def __exit__(self, *exc):
+        try:
+            self.path.unlink()
+        except FileNotFoundError:
+            pass
+        return False
 
 
 # --------------------------------------------------------------------------- registry
@@ -238,6 +289,13 @@ def load_strings(lang: str | None = None, strings_json: str | None = None, pool=
 
 def pool_strings(pool, cfg: dict) -> dict:
     return load_strings(cfg.get("pool_language"), pool=pool)
+
+
+def journal_tokens(strings: dict) -> dict:
+    """Tokens used when writing journal entries in the pool language (falls back to English)."""
+    out = dict(JOURNAL_TOKENS_EN)
+    out.update({k: v for k, v in (strings.get("journal_tokens") or {}).items() if k in out and v})
+    return out
 
 
 # --------------------------------------------------------------------------- rendering

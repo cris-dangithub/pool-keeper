@@ -21,14 +21,20 @@ too (`references/github.md`).
   - Promoted: <file key> (only if promoted)
 ```
 
-- **IDs** are global and incremental: J0001, J0002… across all months.
+- **IDs** are global and incremental: J0001, J0002… across all months. `pk journal add` takes
+  the number and writes the entry under a pool lock (two sessions never share a J number).
 - **Dates are absolute.** Resolve "today", "yesterday", "last Monday" against today's date.
-  When the activity is told on a later day, add `rec: <date it was told>` (`--recorded`).
+  When the activity is told on a later day, add `rec: <date it was told>` (`--recorded`). A date
+  that cannot be worked out at all → today's date and "(estimated date)" in the description.
 - **`@context`**: the slug of the experience file (`2025_acme`), `@personal`, or
-  `@github:<owner>/<repo>`. Default: the current position, or `journal.default_context`.
-- **`qty:`** for countable things (`qty: 3 interviews`, `qty: 2 h`).
-- The weekday in the heading is in the pool language. The tokens `qty:`, `rec:`, `link:`,
-  `Original:` and `Promoted:` are fixed in every language (scripts read them).
+  `@github:<owner>/<repo>`. Default: the current position, or `journal.default_context`. When
+  the context is really unclear → `@?` plus "(context unclear)"; don't ask.
+- **`qty:`** for countable things (`qty: 3 interviews`, `qty: 2 h`) — only when the person gave
+  the number; never guess one.
+- The weekday in the heading and the tokens are in the pool language (`pk strings` →
+  `journal_tokens`: e.g. Indonesian `jumlah:`, `dicatat`, `Asli:`, `Dipromosikan:`; Spanish
+  `cantidad:`, `registrado:`, `Promovido:`). `pk journal add` writes them; scripts read the tokens
+  of every built-in language, so a pool that changes language keeps parsing.
 - **Third-party names are anonymised**: "interviewed a candidate for the waiter role", not the
   candidate's name; "met the operations manager", not their name.
 
@@ -55,16 +61,20 @@ It reports `unknown_tags`: add them to the vocabulary (`pk journal tags --add <t
    description is normalised, in `pool_language`, without embellishment.
 4. **Light promotion** — only when the activity is new information for the rest of the pool;
    tag the promoted point with `[J####]` and add `Promoted: <key>` to the entry:
-   - a new tool or skill → `skills` (evidence: "used in <context> [J0042]");
+   - a new tool or skill → `skills` (evidence: "used in <context> [J0042]") and the experience
+     file's "tools" section;
    - a measurable result, an award, praise/feedback → `achievements` (+ the experience file);
    - a new responsibility → the experience file's duties;
    - a job or role change → this is a normal ingest (`references/ingest.md`): archive the
      message as a chat-notes source too, update profile/experience/timeline.
    Routine (meetings, usual tasks) **stays in the journal only**.
-5. **No questions.** Gaps (e.g. which position an activity belongs to, a missing number) go
-   silently to `<open_questions>`.
-6. **Changelog only when something was promoted.** Pure journal writes don't touch the
-   changelog or the snapshot (unless a promotion changes what the snapshot shows).
+5. **No questions** — never the ✍ writing-pattern question either. Gaps (e.g. which position an
+   activity belongs to, a missing number) go silently to `<open_questions>`. Single exception: a
+   note that truly cannot be understood → store it as it is, marked "meaning unclear", and ask
+   **one** clarification question.
+6. **Changelog only when something was promoted** (short entry: `## <date> — <cl_journal_promotion>
+   J0004–J0006`). Pure journal writes don't touch the changelog or the snapshot (unless a
+   promotion changes what the snapshot shows).
 7. **Sources index**: the journal is not archived per note; the index carries one standing note
    that J#### entries are sources (written at init).
 8. **Report: 1–2 lines** in `ui_language`, e.g. `📓 J0107–J0109 recorded (#interview ×3,

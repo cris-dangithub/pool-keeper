@@ -66,7 +66,7 @@ starting a long loop only if it is more than ~5 batches.
 ## 3. Record
 
 1. **One source per repo per sync**: `<sources>/<date>_github-<owner>-<repo>/<source_notes>`
-   (next S ID; index kind "GitHub sync (<n> units)"; SHA column `–`). Start from the run's notes
+   (S ID reserved with `pk next-id S --reserve`; index kind "GitHub sync (<n> units)"; SHA column `–`). Start from the run's notes
    draft and complete WHAT/WHY/result/technologies. It holds the date, user/identity, SHAs,
    commit/PR URLs, Jira keys, what/why. Private repos: `🔒 private` in the title and in every
    pool line that names the repo.

@@ -9,9 +9,20 @@ import datetime as dt
 import pathlib
 import re
 
-from common import iter_md, load_config, lpath, read_text
+from common import JOURNAL_TOKEN_ALIASES, iter_md, load_config, lpath, read_text
 
 PAD = {"S": 3, "J": 4, "A": 2, "G": 3, "K": 3}
+
+
+def _alt(key: str) -> str:
+    return "|".join(re.escape(t) for t in JOURNAL_TOKEN_ALIASES[key])
+
+
+_QTY_RE = re.compile(rf"^(?:{_alt('qty')}):", re.I)
+_QTY_VAL = re.compile(rf"^(?:{_alt('qty')}):\s*([0-9]+(?:[.,][0-9]+)?)\s*(.*)$", re.I)
+_REC_RE = re.compile(rf"^(?:{_alt('rec')}):?\s*(\d{{4}}-\d{{2}}-\d{{2}})\s*$", re.I)
+_LINK_RE = re.compile(rf"^(?:{_alt('link')}):\s*(.*)$", re.I)
+RESERVED_KIND = "(reserved)"
 
 _FENCE = re.compile(r"```.*?```", re.S)
 _INLINE = re.compile(r"`[^`\n]*`")
@@ -144,7 +155,8 @@ def next_id(pool, kind: str, cfg=None) -> str:
 # --------------------------------------------------------------------------- journal
 DAY_RE = re.compile(r"^##\s+(\d{4}-\d{2}-\d{2})\b")
 ENTRY_RE = re.compile(r"^- \*\*(J\d{4,})\*\*(.*)$")
-SUB_RE = re.compile(r"^\s{2,}- (Original|Promoted):\s*(.*)$")
+SUB_RE = re.compile(rf"^\s{{2,}}- ({_alt('original')}|{_alt('promoted')}):\s*(.*)$")
+_ORIGINAL_WORDS = {t.lower() for t in JOURNAL_TOKEN_ALIASES["original"]}
 MONTH_FILE = re.compile(r"^\d{4}-\d{2}\.md$")
 
 
@@ -182,17 +194,17 @@ def parse_entry_parts(rest: str) -> dict:
             out["tags"] += [t[1:].lower() for t in part.split() if len(t) > 1]
         elif part.startswith("@"):
             out["context"] = part[1:].strip()
-        elif part.lower().startswith("qty:"):
-            m = re.match(r"qty:\s*([0-9]+(?:[.,][0-9]+)?)\s*(.*)$", part, re.I)
+        elif _QTY_RE.match(part):
+            m = _QTY_VAL.match(part)
             if m:
                 out["qty"] = float(m.group(1).replace(",", "."))
                 out["unit"] = m.group(2).strip()
             else:
                 out["problems"].append(f"unreadable quantity {part!r}")
-        elif part.lower().startswith("rec:"):
-            out["recorded"] = part[4:].strip()
-        elif part.lower().startswith("link:"):
-            out["link"] = part[5:].strip()
+        elif _REC_RE.match(part):
+            out["recorded"] = _REC_RE.match(part).group(1)
+        elif _LINK_RE.match(part):
+            out["link"] = _LINK_RE.match(part).group(1).strip()
         else:
             desc.append(part)
     out["description"] = " · ".join(desc)
@@ -226,7 +238,7 @@ def parse_journal_file(text: str, rel: str) -> tuple[list[Entry], list[str]]:
         m = SUB_RE.match(line)
         if m and cur is not None:
             val = m.group(2).strip()
-            if m.group(1) == "Original":
+            if m.group(1).lower() in _ORIGINAL_WORDS:
                 if len(val) >= 2 and val[0] == val[-1] == '"':
                     val = val[1:-1]
                 cur.original = val

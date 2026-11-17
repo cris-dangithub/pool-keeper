@@ -29,8 +29,8 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from common import (CORE_DIR_KEYS, CORE_FILE_KEYS, DOMAIN_KEYS, NAME_KEYS, add_pool_arg,  # noqa: E402
                     load_config, load_strings, lpath, parse_date, read_text, require_pool)
-from model import (alias_map, all_tags, find_tags, id_definitions, journal_entries,  # noqa: E402
-                   journal_files, source_rows, strip_code, tag_vocabulary)
+from model import (RESERVED_KIND, alias_map, all_tags, find_tags, id_definitions,  # noqa: E402
+                   journal_entries, journal_files, source_rows, strip_code, tag_vocabulary)
 
 # every language's "original text" heading is accepted (pools may mix after a language change)
 ORIGINAL_HEADINGS = {"original text", "texto original", "bullet asli", "teks asli", "kalimat asli"}
@@ -87,6 +87,10 @@ def lint(pool: pathlib.Path) -> dict:
     src_dir = lpath(pool, cfg, "sources")
     shas = collections.defaultdict(list)
     for r in rows:
+        if r.kind.strip() == RESERVED_KIND:
+            W(f"{r.id}: reserved but never filled in (an ingest was interrupted? complete it, or "
+              f"mark the row 'not used')")
+            continue
         folder = r.folder.rstrip("/")
         if folder and folder not in ("–", "-") and not (src_dir / folder).exists():
             W(f"{r.id}: folder '{folder}' not found in {layout['sources']}")

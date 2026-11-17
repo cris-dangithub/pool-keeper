@@ -3,10 +3,15 @@
 IDs and file fingerprints.
 
     ids.py next-id S|J|A|G|K [--count N]     # next free ID(s): S042, J0107, A12, G015, K004
+    ids.py next-id S --reserve FOLDER [--reserve FOLDER ...]
+                                             # take the ID(s) AND write placeholder index rows
     ids.py hash FILE [FILE ...]              # SHA-256 + duplicate check against the sources index
 
 `next-id` reads the definitions (sources index rows, journal entries, achievement rows, G/K
 headings) and, for S and J, every tag already used anywhere, so an ID is never handed out twice.
+With `--reserve` (S only) the lookup and a placeholder row per folder in the sources index happen
+under a pool lock, so two sessions ingesting at the same time can never get the same S number;
+the ingest then fills the row in place (kind "(reserved)" until then — `pk lint` warns).
 `hash` prints the full hash, the 12-character prefix stored in the index, and the source that
 already has it (if any): a duplicate is not archived again.
 """
@@ -16,11 +21,13 @@ import argparse
 import hashlib
 import json
 import pathlib
+import re
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from common import add_pool_arg, load_config, lpath, read_text, require_pool  # noqa: E402
-from model import fmt_id, next_id, source_rows  # noqa: E402
+from common import (PoolLock, add_pool_arg, load_config, lpath, read_text,  # noqa: E402
+                    require_pool, today, write_text)
+from model import RESERVED_KIND, fmt_id, next_id, source_rows  # noqa: E402
 
 
 def sha256(path) -> str:
@@ -31,8 +38,36 @@ def sha256(path) -> str:
     return h.hexdigest().upper()
 
 
+def insert_rows(index_text: str, rows: list[str]) -> str:
+    """Insert table rows after the last S row of the sources index (or after the table's
+    separator line when the table is still empty)."""
+    lines = index_text.split("\n")
+    last = max((i for i, l in enumerate(lines) if re.match(r"^\|\s*S\d{3,}\s*\|", l)), default=None)
+    if last is None:
+        last = next((i for i, l in enumerate(lines) if re.match(r"^\|\s*:?-{3,}", l)), None)
+    if last is None:
+        sys.exit("INDEX_TABLE_MISSING: the sources index has no table to add rows to.")
+    lines[last + 1:last + 1] = rows
+    return "\n".join(lines)
+
+
 def cmd_next(a):
     pool = require_pool(a.pool)
+    if a.reserve:
+        if a.kind != "S":
+            sys.exit("--reserve is only for S IDs (journal IDs are reserved by `pk journal add`).")
+        cfg = load_config(pool)
+        idx = lpath(pool, cfg, "sources_index")
+        with PoolLock(pool):
+            first = next_id(pool, "S", cfg)
+            n = int(first[1:])
+            ids = [fmt_id("S", n + i) for i in range(len(a.reserve))]
+            rows = [f"| {i} | {today()} | `{folder.strip().rstrip('/')}/` | {RESERVED_KIND} | "
+                    f"{RESERVED_KIND} | – |" for i, folder in zip(ids, a.reserve)]
+            write_text(idx, insert_rows(read_text(idx), rows))
+        print(json.dumps([{"id": i, "folder": f} for i, f in zip(ids, a.reserve)],
+                         ensure_ascii=False, indent=2))
+        return 0
     first = next_id(pool, a.kind)
     kind, n = first[0], int(first[1:])
     ids = [fmt_id(kind, n + i) for i in range(a.count)]
@@ -69,6 +104,8 @@ def main(argv=None):
     p = sub.add_parser("next-id"); add_pool_arg(p)
     p.add_argument("kind", type=str.upper, choices=["S", "J", "A", "G", "K"])
     p.add_argument("--count", type=int, default=1)
+    p.add_argument("--reserve", action="append", metavar="FOLDER",
+                   help="S only: write a placeholder index row for this source folder (repeatable)")
     p.set_defaults(fn=cmd_next)
     p = sub.add_parser("hash"); add_pool_arg(p); p.add_argument("files", nargs="+")
     p.set_defaults(fn=cmd_hash)

@@ -9,6 +9,11 @@ Pool management: find, create and configure a knowledge pool.
                  [--web-research auto|ask|off] [--max-questions 1] [--git]
                  [--default-context SLUG] [--translate-originals] [--never-copy TEXT ...]
                  [--no-delegation] [--registry-name NAME] [--no-register] [--no-skill-path]
+    pool.py adopt --root DIR --name ... (same options as init) [--map KEY=PATH ...]
+                  [--legacy-skill-dir DIR] [--dry-run]
+                                                   # manage an existing pool: keeps every file
+                                                   # and name, maps them to layout keys, creates
+                                                   # only what is missing
     pool.py refresh                                # create missing files, rewrite instruction blocks
     pool.py config show | get KEY | set KEY=VALUE ...
     pool.py registry list | add NAME PATH | remove NAME
@@ -29,8 +34,9 @@ import subprocess
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from common import (CORE_DIR_KEYS, CORE_FILE_KEYS, DOMAIN_KEYS, MARKER, SKILL_DIR,  # noqa: E402
-                    STRINGS_OVERRIDE, TEMPLATES, VERSION, add_pool_arg, builtin_languages,
+from common import (CORE_DIR_KEYS, CORE_FILE_KEYS, DOMAIN_KEYS, LEGACY_DIR, MARKER,  # noqa: E402
+                    NAME_KEYS, SKILL_DIR, STRINGS_OVERRIDE, TEMPLATES, VERSION, add_pool_arg,
+                    builtin_languages,
                     find_pool, is_pool, load_config, load_layout, load_registry, load_strings,
                     read_text, render, require_pool, save_config, save_registry, slugify,
                     today, write_text)
@@ -173,10 +179,16 @@ def cmd_init(a):
                 and (root / v.rstrip("/")).exists()]
     if existing and not a.allow_existing:
         sys.exit("NOT_EMPTY: this folder already has pool-like content (" + ", ".join(existing[:5])
-                 + "). Adopting an existing pool is planned for pool-keeper 0.2; for now choose an "
-                   "empty folder, or pass --allow-existing to only add what is missing (nothing is "
-                   "overwritten).")
+                 + "). To manage an existing pool use `pk adopt` (keeps every file and name); "
+                   "--allow-existing only adds what is missing without indexing old files.")
     root.mkdir(parents=True, exist_ok=True)
+    cfg = build_config(a, layout)
+    out = write_pool(root, cfg, a)
+    print(json.dumps(dict(out, config=cfg), ensure_ascii=False, indent=2))
+    return 0
+
+
+def build_config(a, layout: dict) -> dict:
     domains = {k: False for k in DOMAIN_KEYS}
     for d in (a.domains or "").split(","):
         d = d.strip()
@@ -185,7 +197,7 @@ def cmd_init(a):
         if d not in domains:
             sys.exit(f"unknown domain {d!r}; choose from {', '.join(DOMAIN_KEYS)}")
         domains[d] = True
-    cfg = {
+    return {
         "version": 1,
         "pool_keeper": VERSION,
         "created": today(),
@@ -208,11 +220,15 @@ def cmd_init(a):
         "git": bool(a.git),
         "show_skill_path": not a.no_skill_path,
     }
+
+
+def write_pool(root: pathlib.Path, cfg: dict, a) -> dict:
+    """Config, strings override, missing files, instruction blocks, registry, git (init/adopt)."""
     (root / MARKER).mkdir(parents=True, exist_ok=True)
     save_config(root, cfg)
     if a.strings_json:
         shutil.copyfile(a.strings_json, root / MARKER / STRINGS_OVERRIDE)
-    write_text(root / MARKER / ".gitignore", "github/runs/\n")
+    write_text(root / MARKER / ".gitignore", "github/runs/\nids.lock\n")
     created = create_missing(root, cfg)
     blocks = refresh_instructions(root, cfg)
     reg_name = None
@@ -221,11 +237,148 @@ def cmd_init(a):
         reg_name = a.registry_name or slugify(a.name)
         reg.setdefault("pools", {})[reg_name] = {"path": str(root), "person": a.name, "added": today()}
         save_registry(reg)
-    git = None
-    if a.git:
-        git = git_init(root)
-    print(json.dumps({"pool": str(root), "registered_as": reg_name, "created": created,
-                      "instructions": blocks, "git": git, "config": cfg}, ensure_ascii=False, indent=2))
+    git = git_init(root) if a.git else None
+    return {"pool": str(root), "registered_as": reg_name, "created": created,
+            "instructions": blocks, "git": git}
+
+
+# --------------------------------------------------------------------------- adopt
+_PREFIX = re.compile(r"^\d+[_-]")
+IGNORED_TOP = {"CLAUDE.md", "AGENTS.md", MARKER, ".git", ".gitignore", ".gitattributes"}
+
+
+def bare(name: str) -> str:
+    """'00_profil.md' -> 'profil.md': the name without its numeric ordering prefix."""
+    return _PREFIX.sub("", name).lower()
+
+
+def match_layout(root: pathlib.Path, wanted: dict, overrides: dict) -> dict:
+    """Map every canonical key to what already exists in `root`.
+
+    For each key: an explicit override, else the exact path of the language layout, else the one
+    entry of the same kind (file/folder) in the same parent folder whose name matches without the
+    numeric prefix (`00_profil.md` ↔ `01_profil.md`). Nested keys (journal_readme...) look inside
+    the folder their parent key was mapped to."""
+    found, missing, ambiguous = {}, [], {}
+    dir_keys = [k for k in wanted if wanted[k].endswith("/")]
+    order = dir_keys + [k for k in wanted if k not in dir_keys]
+    for key in order:
+        if key in NAME_KEYS:
+            continue
+        want = wanted[key]
+        is_dir = want.endswith("/")
+        if key in overrides:
+            rel = overrides[key].replace("\\", "/").strip("/") + ("/" if is_dir else "")
+            if not (root / rel.rstrip("/")).exists():
+                sys.exit(f"MAP_NOT_FOUND: --map {key}={overrides[key]} does not exist in {root}")
+            found[key] = rel
+            continue
+        parts = want.rstrip("/").split("/")
+        parent = "/".join(parts[:-1])
+        for pk, pv in found.items():  # a nested key follows its parent's real folder name
+            if pk in dir_keys and parent and wanted[pk].rstrip("/") == parent:
+                parent = pv.rstrip("/")
+        exact = f"{parent}/{parts[-1]}" if parent else parts[-1]
+        if (root / exact).exists() and (root / exact).is_dir() == is_dir:
+            found[key] = exact + ("/" if is_dir else "")
+            continue
+        base = root / parent if parent else root
+        cands = [p for p in (base.iterdir() if base.is_dir() else [])
+                 if p.is_dir() == is_dir and bare(p.name) == bare(parts[-1])]
+        if len(cands) == 1:
+            rel = (f"{parent}/" if parent else "") + cands[0].name
+            found[key] = rel + ("/" if is_dir else "")
+        elif len(cands) > 1:
+            ambiguous[key] = sorted(c.name for c in cands)
+        else:
+            missing.append(key)
+    return {"found": found, "missing": missing, "ambiguous": ambiguous}
+
+
+def source_notes_name(root: pathlib.Path, sources_rel: str | None, default: str) -> str:
+    """The notes file name the existing sources use most (e.g. catatan.md), else the default."""
+    if not sources_rel:
+        return default
+    counts: dict = {}
+    for d in (root / sources_rel.rstrip("/")).glob("*/"):
+        for f in d.glob("*.md"):
+            counts[f.name] = counts.get(f.name, 0) + 1
+    return max(counts, key=counts.get) if counts else default
+
+
+def move_legacy_skill(root: pathlib.Path, rel: str) -> dict:
+    """Move an old pool-specific skill out of sight of skill scanners (cv-tailor's manager probe
+    reads every SKILL.md inside a pool): into .pool-keeper/legacy/<name>/, SKILL.md renamed."""
+    src = (root / rel).resolve()
+    if not src.is_dir() or root.resolve() not in src.parents:
+        sys.exit(f"LEGACY_NOT_FOUND: {rel} is not a folder inside the pool")
+    name = src.name
+    skill_md = src / "SKILL.md"
+    if skill_md.is_file():
+        m = re.search(r"^name:\s*(\S+)", read_text(skill_md), re.M)
+        name = m.group(1) if m else name
+    dest = root / MARKER / LEGACY_DIR / name
+    if dest.exists():
+        sys.exit(f"LEGACY_EXISTS: {dest} already exists")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(src), str(dest))
+    if (dest / "SKILL.md").is_file():
+        (dest / "SKILL.md").rename(dest / "SKILL.legacy.md")
+    return {"from": rel, "to": dest.relative_to(root).as_posix()}
+
+
+def cmd_adopt(a):
+    root = pathlib.Path(a.root).expanduser().resolve()
+    if is_pool(root):
+        sys.exit(f"ALREADY_INITIALISED: {root} is already a pool (use `pk refresh`).")
+    if not root.is_dir():
+        sys.exit(f"NOT_FOUND: {root} is not a folder")
+    wanted = load_layout(a.layout or a.pool_language, a.layout_json)
+    overrides = {}
+    for kv in a.map or []:
+        k, _, v = kv.partition("=")
+        if k.strip() not in wanted or not v.strip():
+            sys.exit(f"bad --map {kv!r}: use key=relative/path with a key from: {', '.join(wanted)}")
+        overrides[k.strip()] = v.strip()
+    m = match_layout(root, wanted, overrides)
+    if m["ambiguous"]:
+        sys.exit("AMBIGUOUS_LAYOUT: several candidates for "
+                 + "; ".join(f"{k}: {', '.join(v)}" for k, v in m["ambiguous"].items())
+                 + ". Pass --map key=path for each.")
+    core = [k for k in ("profile", "open_questions", "sources_index") if k in m["found"]]
+    if len(core) < 2:
+        sys.exit("NOT_A_POOL: this folder does not look like a knowledge pool (no profile / open "
+                 "questions / sources index found). Use `pk init` in an empty folder instead, and "
+                 "ingest these files as sources.")
+    layout = dict(wanted)
+    layout.update(m["found"])
+    layout["source_notes"] = source_notes_name(root, m["found"].get("sources"), wanted["source_notes"])
+    used_top = {v.strip("/").split("/")[0] for v in layout.values()} | IGNORED_TOP
+    legacy_top = (a.legacy_skill_dir or "").replace("\\", "/").strip("/").split("/")[0]
+    unmapped = sorted(p.name for p in root.iterdir()
+                      if p.name not in used_top and p.name != legacy_top and p.name not in ("README.md", "CHANGELOG.md"))
+    strings = load_strings(a.pool_language, a.strings_json)
+    oq = root / layout["open_questions"]
+    has_not_done = oq.is_file() and re.search(r"^##\s+" + re.escape(strings["h_not_done"]) + r"\s*$",
+                                             read_text(oq), re.M) is not None
+    chosen = {d.strip() for d in (a.domains or "").split(",") if d.strip()}
+    enabled = enabled_keys({"domains": {d: d in chosen for d in DOMAIN_KEYS}})
+    plan = {"pool": str(root), "mapped": m["found"],
+            "will_create": {k: layout[k] for k in m["missing"] if k in enabled},
+            "source_notes": layout["source_notes"], "unmapped_kept_as_is": unmapped,
+            "legacy_skill": a.legacy_skill_dir or None,
+            "not_done_section_present": has_not_done}
+    if a.dry_run:
+        print(json.dumps(dict(plan, dry_run=True), ensure_ascii=False, indent=2))
+        return 0
+    legacy = move_legacy_skill(root, a.legacy_skill_dir) if a.legacy_skill_dir else None
+    cfg = build_config(a, layout)
+    cfg["adopted"] = {"on": today(), "from_layout": a.layout or a.pool_language,
+                      "legacy_skill": legacy["to"] if legacy else None}
+    out = write_pool(root, cfg, a)
+    warn = [] if has_not_done else [f"{layout['open_questions']} has no '## {strings['h_not_done']}' "
+                                    "section: add it (delegated 'not done' answers go there)"]
+    print(json.dumps(dict(plan, **out, legacy_moved=legacy, warnings=warn), ensure_ascii=False, indent=2))
     return 0
 
 
@@ -322,8 +475,9 @@ def cmd_strings(a):
     pool = require_pool(a.pool)
     cfg = load_config(pool)
     s = load_strings(cfg.get("pool_language"), pool=pool)
-    keep = {k: v for k, v in s.items() if k == "m" or k.startswith(("h_", "f_", "star_", "g_", "k_"))
-            or k in ("weekdays", "journal_title", "not_done_format")}
+    keep = {k: v for k, v in s.items() if k == "m" or k.startswith(("h_", "f_", "star_", "g_", "k_",
+                                                                     "src_", "kind_", "cl_"))
+            or k in ("weekdays", "journal_title", "not_done_format", "journal_tokens", "journal_personal")}
     print(json.dumps({"pool_language": cfg.get("pool_language"), "builtin": builtin_languages(),
                       "strings": keep}, ensure_ascii=False, indent=2))
     return 0
@@ -353,32 +507,44 @@ def main(argv=None):
 
     p = sub.add_parser("find"); add_pool_arg(p); p.set_defaults(fn=cmd_find)
 
+    def pool_args(p):
+        p.add_argument("--root", required=True)
+        p.add_argument("--name", required=True)
+        p.add_argument("--ui-language", required=True)
+        p.add_argument("--pool-language", required=True)
+        p.add_argument("--layout", default=None, help="built-in layout: " + ", ".join(builtin_languages()))
+        p.add_argument("--layout-json", default=None, help="translated layout for other languages")
+        p.add_argument("--strings-json", default=None, help="translated headings for other languages")
+        p.add_argument("--domains", default="", help="comma list of " + ", ".join(DOMAIN_KEYS))
+        p.add_argument("--country", default="")
+        p.add_argument("--official-source", action="append")
+        p.add_argument("--web-research", choices=["auto", "ask", "off"], default="auto")
+        p.add_argument("--max-questions", type=int, default=1)
+        p.add_argument("--never-copy", action="append")
+        p.add_argument("--default-context", default="")
+        p.add_argument("--translate-originals", action="store_true",
+                       help="store original text translated (default: keep its language)")
+        p.add_argument("--no-delegation", action="store_true")
+        p.add_argument("--git", action="store_true")
+        p.add_argument("--registry-name", default=None)
+        p.add_argument("--no-register", action="store_true")
+        p.add_argument("--no-skill-path", action="store_true",
+                       help="do not write this machine's skill path into CLAUDE.md/AGENTS.md")
+
     p = sub.add_parser("init")
-    p.add_argument("--root", required=True)
-    p.add_argument("--name", required=True)
-    p.add_argument("--ui-language", required=True)
-    p.add_argument("--pool-language", required=True)
-    p.add_argument("--layout", default=None, help="built-in layout: " + ", ".join(builtin_languages()))
-    p.add_argument("--layout-json", default=None, help="translated layout for other languages")
-    p.add_argument("--strings-json", default=None, help="translated headings for other languages")
-    p.add_argument("--domains", default="", help="comma list of " + ", ".join(DOMAIN_KEYS))
-    p.add_argument("--country", default="")
-    p.add_argument("--official-source", action="append")
-    p.add_argument("--web-research", choices=["auto", "ask", "off"], default="auto")
-    p.add_argument("--max-questions", type=int, default=1)
-    p.add_argument("--never-copy", action="append")
-    p.add_argument("--default-context", default="")
-    p.add_argument("--translate-originals", action="store_true",
-                   help="store original text translated (default: keep its language)")
-    p.add_argument("--no-delegation", action="store_true")
-    p.add_argument("--git", action="store_true")
-    p.add_argument("--registry-name", default=None)
-    p.add_argument("--no-register", action="store_true")
-    p.add_argument("--no-skill-path", action="store_true",
-                   help="do not write this machine's skill path into CLAUDE.md/AGENTS.md")
+    pool_args(p)
     p.add_argument("--allow-existing", action="store_true")
     p.add_argument("--force", action="store_true")
     p.set_defaults(fn=cmd_init)
+
+    p = sub.add_parser("adopt", help="manage an existing pool: keep every file and name")
+    pool_args(p)
+    p.add_argument("--map", action="append", metavar="KEY=PATH",
+                   help="force a layout key to an existing path (repeatable)")
+    p.add_argument("--legacy-skill-dir", default=None,
+                   help="old pool-specific skill folder inside the pool to retire into .pool-keeper/legacy/")
+    p.add_argument("--dry-run", action="store_true", help="only print the mapping")
+    p.set_defaults(fn=cmd_adopt)
 
     p = sub.add_parser("refresh"); add_pool_arg(p); p.set_defaults(fn=cmd_refresh)
 

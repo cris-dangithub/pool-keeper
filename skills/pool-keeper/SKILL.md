@@ -22,11 +22,13 @@ description: >
   certificate; asks to extract writing patterns or pastes a style correction (AI text + the
   version they wanted: "it should be like this", "debería ser así", "harusnya begini"); asks
   "what can you do?", "what next?", "what is still missing?", "¿qué sigue?", "apa yang masih
-  kurang?"; wants to set up a new pool ("set up pool-keeper", "create my knowledge pool").
-  Also when another skill (e.g. cv-tailor) hands over a packet of facts, corrections or "not
-  done" answers to write into the pool (delegation mode, no interaction). Never invents facts.
+  kurang?"; wants to set up a new pool ("set up pool-keeper", "create my knowledge pool") or
+  bring an existing knowledge pool under pool-keeper ("adopt my pool", "migrate my knowledge
+  base"). Also when another skill (e.g. cv-tailor) hands over a packet of facts, corrections or
+  "not done" answers to write into the pool, or an assistant in another session forwards what
+  the person told it (delegation mode, no interaction). Never invents facts.
   Not a CV generator.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # pool-keeper
@@ -59,7 +61,8 @@ Written below as `pk <command>`. Add `--pool <name|path>` when several pools exi
    (`keep_original_language`).
 3. Never use fixed file names: every path comes from `layout` in the config (canonical keys:
    profile, experience, journal, open_questions, sources_index...). `pk strings` prints the
-   marker words and section headings to use in the pool language.
+   marker words, section headings, source-folder prefixes, source kinds, changelog labels and
+   journal tokens to use in the pool language.
 4. Before writing, read `README.md`, the sources index, the open questions file and the files you
    are about to change.
 
@@ -76,6 +79,8 @@ Written below as `pk <command>`. Add `--pool <name|path>` when several pools exi
 | says "yes" to extracting writing patterns, or asks for it | pattern extraction (6a) | `references/writing-style.md` |
 | pastes AI text + the version they wanted | style correction (6b) | `references/corrections.md` |
 | another skill hands over a packet (cv-tailor...) | delegation mode, no questions | `references/delegation.md` |
+| an assistant in another session/project forwards what the person told it | delegation mode, "forwarded" source | `references/delegation.md` |
+| has an existing pool (made by hand or by an older person-specific skill) to bring under pool-keeper | adopt it: keep every file and name | `references/setup.md` ("Adopting an existing pool") |
 | "what can you do?", "what next?", "what is missing?", status | guide / status | `references/status.md` |
 | any agent asks how to read the pool, or a question about the person | reader rules | `references/reader.md` |
 | wants to enable preferences, goals, availability or personal life | optional domains | `references/domains.md` |
@@ -118,3 +123,6 @@ When to ask questions, and how to write them: `references/questions.md` (default
     anywhere (trackers, Jira, websites).
 12. After every ingest: changelog entry, regenerate the snapshot (`references/ingest.md` §5),
     `pk lint`, and `pk git-commit` if `git` is true (never push).
+13. **IDs are reserved, never peeked**: S numbers only through `pk next-id S --reserve`, journal
+    entries only through `pk journal add` (both take a pool lock), because several sessions may
+    write to the same pool at once.

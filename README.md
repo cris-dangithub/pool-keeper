@@ -84,6 +84,14 @@ Say "set up pool-keeper" (or just attach your CV). The setup asks, one at a time
 Then it writes the pool and offers the first ingest. From then on: attach files, tell things,
 dictate your day, or ask "what is still missing?".
 
+### Adopting an existing pool
+
+Already have a knowledge pool (built by hand, or by an older skill written for one person)?
+Say "adopt my pool" in its folder. pool-keeper reads its rules, previews how each file maps to
+its layout (`pk adopt --dry-run`), backs it up, and takes it over **without moving or renaming
+anything**: same files, same language, same habits. It only adds what is missing (a one-page
+snapshot, a STAR story bank) and retires the old skill into `.pool-keeper/legacy/`.
+
 ## Your data
 
 - **The pool is a plain folder of Markdown files that you own**, wherever you choose. Nothing is

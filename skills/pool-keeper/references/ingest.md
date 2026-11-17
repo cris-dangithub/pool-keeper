@@ -14,11 +14,21 @@ many files can come in one message: process them all, then write **one** report.
 
 ## 2. Archive every file
 
+Folder prefixes, source kinds and changelog labels are written in the pool language: `pk
+strings` → `src_*` (e.g. `src_chat_notes`: chat-notes / notas-chat / catatan-chat), `kind_*`
+(e.g. `kind_work_evidence`: Work evidence / Evidencia de trabajo / Bukti karya), `cl_*`. Below
+they appear in English.
+
 For each attached file:
 
 1. `pk hash <file>` → full SHA-256, 12-character prefix and `duplicate_of`. If it is a
    duplicate: say so, don't archive it again (but still check whether anything in it was missed).
-2. `pk next-id S` → the new ID (S001, S002...). Several files: `pk next-id S --count N`.
+2. **Reserve the ID before anything else**: `pk next-id S --reserve "<YYYY-MM-DD>_<name>"`
+   (one `--reserve` per source). It takes the next free S number under a pool lock **and**
+   writes a placeholder row in `<sources_index>` (kind `(reserved)`), so another session
+   ingesting into the same pool at the same time can never get the same number. Fill that row in
+   place in step 5 — never add a second row for it. (`pk next-id S` without `--reserve` only
+   peeks; never use a peeked number to write.)
 3. Create `<sources>/<YYYY-MM-DD>_<file name without extension>/` and copy the original there
    (keep the file name). If the copy fails because the file is open in another program, retry
    once, then ask the user to close it.
@@ -34,7 +44,7 @@ For each attached file:
      (one ID), with a combined `extracted.txt` (one section per file).
    - text pasted in chat / spoken answers → `<sources>/<date>_chat-notes-<topic>/<source_notes>`
      with the content **verbatim** (question + answer), an ID like any file.
-5. Add a row to the `<sources_index>` table: ID, date added, folder, kind, content summary,
+5. Fill in the reserved row of `<sources_index>` (same ID, same place): date added, folder, kind, content summary,
    first 12 characters of the SHA-256 (`–` for chat notes / web research). Add a "notes per
    source" entry: where the file came from, what the document was made for, its date if known
    (inference allowed, labelled).
@@ -108,13 +118,22 @@ asked in chat.
 Exception: if you took an important decision on the person's behalf (sensitive data not copied,
 an old value marked "do not use"), say it in one extra line.
 
+## 5b. Two sessions, one number (renumbering)
+
+If `pk lint` reports `duplicate S0xx` (e.g. two sessions wrote without reserving), keep the
+older source on its number and give the newer one(s) the next free numbers: reserve them with
+`pk next-id S --reserve`, move the row, update **every** tag of that source in the pool (Grep
+`[S0xx]` and check each hit belongs to the newer source), and record in the index notes "first
+recorded as S0xx — renumbered <date>; content unchanged" and a changelog entry. Never renumber
+the older source.
+
 ## 6. Answers written in the open questions file
 
 When the user says "process my answers" (or you notice answers under questions):
 1. Read `<open_questions>`; find the text written under questions that is not part of the
    original question list.
 2. Save a verbatim copy as a new source `<sources>/<date>_answers-open-questions/<source_notes>`
-   (next S ID, kind "Answers written in the open questions file").
+   (S ID reserved with `pk next-id S --reserve`, kind "Answers written in the open questions file").
 3. Process it like any other information (steps 3–5): fill the category files, move each
    answered question to the "answered" section with its source tag, and remove the raw answer
    text from under the question.

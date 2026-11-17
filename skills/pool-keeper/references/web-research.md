@@ -16,7 +16,7 @@ explicitly).
 1. Web search, then fetch the best page. Prefer **official sources**: the organisation's own
    site, government registries (`official_sources` in the config, chosen at setup for
    `country`), the issuer's certificate-verification site. Public pages only — never log in.
-2. Save it as a source: `<sources>/<date>_web-research-<topic>/<source_notes>` (next S ID; kind
+2. Save it as a source: `<sources>/<date>_web-research-<topic>/<source_notes>` (S ID reserved with `pk next-id S --reserve`; kind
    "Web research by the agent (public)"), with the URL next to every fact.
 3. Merge with `[S###]` tags as usual. Facts about the organisation go to the experience file's
    organisation context / the school profile. **Conclusions about the person** drawn from the

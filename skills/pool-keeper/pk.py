@@ -8,12 +8,13 @@ Commands:
     doctor                    python, gh (+ accounts), git, which pool is found here
     find                      locate the pool (JSON: ok / NO_POOL / AMBIGUOUS)
     init ...                  create a pool: config, templates, CLAUDE.md/AGENTS.md block, registry
-    refresh                   create missing files (new domains), rewrite the instruction blocks
+    adopt ...                 manage an EXISTING pool: keep every file/name, map it, add what is missing
+    refresh                  create missing files (new domains), rewrite the instruction blocks
     config show|get|set ...   read or change .pool-keeper/config.json
     registry list|add|remove  the pools of every person (~/.pool-keeper/pools.json)
     template KEY              a file template rendered in the pool language (e.g. experience)
     strings                   marker words and headings to use in the pool language
-    next-id S|J|A|G|K         next free ID
+    next-id S|J|A|G|K         next free ID (S --reserve FOLDER: take it + placeholder index row)
     hash FILE...              SHA-256 + duplicate check against the sources index
     extract FILE [-o OUT]     text from .docx (tables, headers, footers, links), .html, text files
     journal add|stats|tags|next-id ...   the activity journal
@@ -37,6 +38,7 @@ COMMANDS = {
     "doctor": ("doctor.py", []),
     "find": ("pool.py", ["find"]),
     "init": ("pool.py", ["init"]),
+    "adopt": ("pool.py", ["adopt"]),
     "refresh": ("pool.py", ["refresh"]),
     "config": ("pool.py", ["config"]),
     "registry": ("pool.py", ["registry"]),

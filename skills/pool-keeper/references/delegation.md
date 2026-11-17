@@ -1,8 +1,18 @@
-# Delegation mode (another skill hands over a packet)
+# Delegation mode (another skill or session hands over a packet)
 
 Used when another skill (usually through a subagent) sends a **packet** of questions it asked
 the person and their answers, or fact corrections, to be written into the pool. There is no
 conversation with the person: the calling skill reports to them.
+
+**Forwarded by another agent or session** (not a skill): the person told something to an
+assistant working elsewhere (another project folder, another chat) and that assistant passes it
+on ("save this in her knowledge pool"). Same steps, with these differences: the source folder
+is `<date>_<src_forwarded>-<topic>`, the kind is "`kind_forwarded` <session or assistant name>
+(<what the person told>)", the packet is stored verbatim **as received** (say in the source
+notes that it is the assistant's wording of what the person said, not the person's own words),
+and its facts count like chat notes from the person — except that they do **not** resolve a
+conflict on an important fact unless the packet quotes the person's own confirmation. The
+return block goes to that assistant.
 
 The pool advertises this in its `CLAUDE.md`/`AGENTS.md` block and in
 `.pool-keeper/manager/SKILL.md`, so a manager probe (e.g. cv-tailor's) answers:
@@ -22,7 +32,7 @@ If `delegation.allowed` is false: write nothing and return `rejected: delegation
    template, skip writing-style steps. Unresolved conflicts → `⚠ conflict` + "Conflicts between
    sources", as usual.
 3. **Source**: store the packet **verbatim** (its language, no translation) in
-   `<sources>/<YYYY-MM-DD>_answers-<caller>-<application id>/<source_notes>`, next S ID, kind
+   `<sources>/<YYYY-MM-DD>_answers-<caller>-<application id>/<source_notes>`, S ID reserved with `pk next-id S --reserve`, kind
    "Answers via <caller> (application <id>, <company – role>)" in the index.
 4. **Classify each answer** (the caller usually pre-labels them; check anyway):
    - **Positive** (a new fact) → normal merge (`references/merge-rules.md`): search first,

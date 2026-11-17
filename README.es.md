@@ -88,6 +88,15 @@ una:
 Después escribe la base y ofrece la primera ingesta. A partir de ahí: adjunta archivos, cuenta
 cosas, dicta tu día o pregunta "¿qué falta?".
 
+### Adoptar una base existente
+
+¿Ya tienes una base de conocimiento, hecha a mano o con una skill antigua escrita para una sola
+persona? Di "adopta mi base" en su carpeta. pool-keeper lee sus reglas, muestra cómo encaja cada
+archivo en su estructura (`pk adopt --dry-run`), hace una copia de seguridad y la toma a su
+cargo **sin mover ni renombrar nada**: mismos archivos, mismo idioma y mismos hábitos. Solo
+añade lo que falta (un resumen de una página y un banco de historias STAR) y retira la skill
+antigua a `.pool-keeper/legacy/`.
+
 ## Tus datos
 
 - **La base es una carpeta normal de archivos Markdown que es tuya**, donde tú elijas. Nada se

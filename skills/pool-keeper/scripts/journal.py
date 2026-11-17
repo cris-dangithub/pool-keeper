@@ -28,8 +28,9 @@ import re
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from common import (add_pool_arg, load_config, lpath, parse_date, pool_strings, read_text,  # noqa: E402
-                    require_pool, today, weekday_name, write_text)
+from common import (JOURNAL_TOKENS_EN, PoolLock, add_pool_arg, journal_tokens,  # noqa: E402
+                    load_config, lpath, parse_date, pool_strings, read_text, require_pool, today,
+                    weekday_name, write_text)
 from model import (DAY_RE, alias_map, iso_week, journal_entries, next_id,  # noqa: E402
                    tag_vocabulary)
 
@@ -43,7 +44,8 @@ def norm_tag(t: str) -> str:
     return re.sub(r"\s+", "-", t.strip().lstrip("#").lower())
 
 
-def entry_line(jid, desc, tags, context, qty, unit, recorded, link) -> str:
+def entry_line(jid, desc, tags, context, qty, unit, recorded, link, tokens=None) -> str:
+    tok = tokens or JOURNAL_TOKENS_EN
     parts = [f"- **{jid}**", desc.strip().replace(" · ", " - ")]
     if tags:
         parts.append(" ".join(f"#{t}" for t in tags))
@@ -51,11 +53,11 @@ def entry_line(jid, desc, tags, context, qty, unit, recorded, link) -> str:
         parts.append(f"@{context}")
     if qty is not None:
         q = int(qty) if float(qty).is_integer() else qty
-        parts.append(f"qty: {q} {unit}".rstrip())
+        parts.append(f"{tok['qty']} {q} {unit}".rstrip())
     if recorded:
-        parts.append(f"rec: {recorded}")
+        parts.append(f"{tok['rec']} {recorded}")
     if link:
-        parts.append(f"link: {link}")
+        parts.append(f"{tok['link']} {link}")
     return " · ".join(parts)
 
 
@@ -104,18 +106,21 @@ def cmd_add(a):
             if canon not in tags:
                 tags.append(canon)
     context = norm_context(a.context) or norm_context((cfg.get("journal") or {}).get("default_context"))
-    jid = next_id(pool, "J", cfg)
-    line = entry_line(jid, a.desc, tags, context, a.qty, a.unit or "", a.recorded, a.link)
-    block = [line, f'  - Original: "{a.original.strip()}"']
-    if a.promoted:
-        block.append(f"  - Promoted: {a.promoted}")
+    tok = journal_tokens(strings)
     jdir = lpath(pool, cfg, "journal")
     f = jdir / f"{date[:7]}.md"
     header = f"## {date} ({weekday_name(parse_date(date), strings)})"
-    text = read_text(f) if f.is_file() else f"# {strings.get('journal_title', 'Journal')} — {date[:7]}\n"
-    new = insert_entry(text, date, header, block)
-    if not a.dry_run:
-        write_text(f, new)
+    # ID and write under one lock: two sessions adding entries at once never share a J number
+    with PoolLock(pool):
+        jid = next_id(pool, "J", cfg)
+        line = entry_line(jid, a.desc, tags, context, a.qty, a.unit or "", a.recorded, a.link, tok)
+        block = [line, f'  - {tok["original"]} "{a.original.strip()}"']
+        if a.promoted:
+            block.append(f"  - {tok['promoted']} {a.promoted}")
+        text = read_text(f) if f.is_file() else f"# {strings.get('journal_title', 'Journal')} — {date[:7]}\n"
+        new = insert_entry(text, date, header, block)
+        if not a.dry_run:
+            write_text(f, new)
     print(json.dumps({"id": jid, "file": f.relative_to(pool).as_posix(), "line": line,
                       "unknown_tags": unknown, "dry_run": bool(a.dry_run)}, ensure_ascii=False, indent=2))
     return 0

@@ -11,7 +11,7 @@
       "name": "pool-keeper",
       "source": "./",
       "description": "Builds and maintains a knowledge pool about a person: sources, facts without duplicates, conflicts, writing style, activity journal and GitHub history.",
-      "version": "0.1.0"
+      "version": "0.2.0"
     }
   ]
 }

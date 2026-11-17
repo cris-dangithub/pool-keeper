@@ -5,9 +5,9 @@
 ## {{t.h_entry_format}}
 ```
 ## 2026-10-09 ({{t.example_weekday}})
-- **J0001** · <{{t.ph_description}}> · #tag1 #tag2 · @<{{t.ph_context}}> · qty: 3 <{{t.ph_unit}}>
-  - Original: "<{{t.ph_verbatim}}>"
-  - Promoted: <{{t.ph_file}}>
+- **J0001** · <{{t.ph_description}}> · #tag1 #tag2 · @<{{t.ph_context}}> · {{t.journal_tokens.qty}} 3 <{{t.ph_unit}}>
+  - {{t.journal_tokens.original}} "<{{t.ph_verbatim}}>"
+  - {{t.journal_tokens.promoted}} <{{t.ph_file}}>
 ```
 {{t.journal_format_notes}}
 

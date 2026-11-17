@@ -1,6 +1,6 @@
 {
   "name": "pool-keeper",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Builds and maintains a knowledge pool about a person: archives every source, extracts all facts without duplicates or deletions, tracks conflicts and open questions, learns their writing style, keeps a daily activity journal and ingests GitHub history. Other skills (e.g. cv-tailor) can write confirmed facts into it.",
   "author": {
     "name": "cris-dangithub"
